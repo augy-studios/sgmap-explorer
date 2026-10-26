@@ -1,42 +1,828 @@
+/* SG Map Explorer.
+   1. The theme system, as docs/uwuapps-theme.md section 1 gives it.
+   2. The Edge Tray, docs/edge-tray-spec.md section 5 and 6.4.
+   3. The page tour, docs/page-tour-spec.md section 7.2.
+   4. The update bar, docs/update-bar-spec.md.
+   5. The app: the map, its controls, the card, the sheets. */
+
+/* ======== 1. theme ======== */
+/* ---- base ---- */
 * {
   padding: 0;
   margin: 0;
   box-sizing: border-box;
-  font-family: "Jua", sans-serif;
-
-  /* Chrome and Opera */
-  user-select: none;
-
-  /* Safari */
+  font-family: "Jua", "Segoe UI", sans-serif;
   -webkit-user-select: none;
-
-  /* Konqueror HTML */
-  -khtml-user-select: none;
-
-  /* Firefox */
-  -moz-user-select: none;
-
-  /* Internet Explorer/Edge */
-  -ms-user-select: none;
+  user-select: none;
 }
 
-:link {
-  color: #6f6;
+html, body { height: 100%; }
+input, textarea { user-select: text; }
+
+:link, :visited { color: var(--brand-ink); }
+a:hover { text-decoration: none; }
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+}
+button:disabled { cursor: not-allowed; opacity: 0.6; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
 
-:visited {
-  color: #66f;
+/* ---- brand colour tokens (7 swatches) ---- */
+:root,
+:root[data-color-theme="classic"] {
+  --brand: #ccffcc;
+  --brand-rgb: 204, 255, 204;
+}
+:root[data-color-theme="not-green-1"] { --brand: #ffcccc; --brand-rgb: 255, 204, 204; }
+:root[data-color-theme="not-green-2"] { --brand: #ccccff; --brand-rgb: 204, 204, 255; }
+:root[data-color-theme="not-green-3"] { --brand: #ffffcc; --brand-rgb: 255, 255, 204; }
+:root[data-color-theme="not-green-4"] { --brand: #ffccff; --brand-rgb: 255, 204, 255; }
+:root[data-color-theme="not-green-5"] { --brand: #ccffff; --brand-rgb: 204, 255, 255; }
+:root[data-color-theme="really-light-green"] { --brand: #ffffff; --brand-rgb: 255, 255, 255; }
+
+/* ---- light / dark surface tokens ---- */
+:root,
+:root[data-mode="light"] {
+  --bg: #eef2f0;
+  --surface: rgba(255, 255, 255, 0.55);
+  --surface-strong: rgba(255, 255, 255, 0.78);
+  --surface-border: rgba(255, 255, 255, 0.65);
+  --ink: #121815;
+  --muted: #5b665f;
+  --shadow: 0 10px 30px rgba(20, 40, 30, 0.10);
+  --brand-ink: #1f6b3d;
+  --ok: #0f7234;
+  --warn: #a24b08;
+  --busy: #627288;
+  --error: #b91c1c;
 }
 
+:root[data-mode="dark"] {
+  --bg: #0c100e;
+  --surface: rgba(255, 255, 255, 0.06);
+  --surface-strong: rgba(255, 255, 255, 0.11);
+  --surface-border: rgba(255, 255, 255, 0.14);
+  --ink: #eef2ef;
+  --muted: #9aa7a0;
+  --shadow: 0 10px 34px rgba(0, 0, 0, 0.5);
+  --brand-ink: #bff5cf;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --busy: #94a3b8;
+  --error: #fa9696;
+}
+
+/* Same in both modes: brand tints are pale whatever the mode. */
 :root {
-  --brand: #99ff99;
-  --bg: #f7faf8;
-  --card: #ffffff;
-  --ink: #0f1721;
-  --muted: #667085;
-  --ring: rgba(153, 255, 153, 0.5);
-  --ok: #16a34a;
-  --warn: #ea580c;
-  --busy: #b91c1c;
+  --on-brand: #121815;
+  /* Brand-derived fills. Any surface that tracked the brand swatch before
+     still tracks it, in both modes. Text on these is always --on-brand. */
+  --brand-fill: color-mix(in srgb, var(--brand) 55%, var(--surface-strong));
+  --brand-fill-strong: color-mix(in srgb, var(--brand) 75%, var(--surface-strong));
+  /* Secondary text on --surface-strong. Plain --muted only reaches 3.6:1
+     there in dark mode, since the strong surface lightens the backdrop. */
+  --muted-strong: color-mix(in srgb, var(--ink) 70%, transparent);
 }
 
+/* flat, static colour derived from theme, no gradients */
+body {
+  background-color: color-mix(in srgb, var(--brand) 10%, var(--bg));
+  color: var(--ink);
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* ---- glass primitive ---- */
+.glass {
+  background: var(--surface);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid var(--surface-border);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+}
+
+/* ---- icon button (theme trigger, modal close) ---- */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background: var(--surface-strong);
+  border: 1px solid var(--surface-border);
+  color: var(--ink);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.icon-btn:hover { transform: translateY(-1px); }
+.icon-btn svg { width: 20px; height: 20px; }
+.icon-btn.small { width: 34px; height: 34px; }
+.icon-btn.small svg { width: 16px; height: 16px; }
+
+/* ---- modal shell ---- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(10, 15, 12, 0.35);
+  padding: 12px;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.2s ease, visibility 0s linear 0s;
+}
+.modal-backdrop.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.18s ease, visibility 0s linear 0.18s;
+}
+
+@media (min-width: 640px) {
+  .modal-backdrop { align-items: center; }
+}
+
+.modal {
+  width: 100%;
+  max-width: 420px;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--surface-strong);
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.18s ease;
+}
+.modal-backdrop.hidden .modal {
+  opacity: 0;
+  transform: translateY(14px) scale(0.97);
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal-head h2 { font-size: 1.1rem; color: var(--brand-ink); }
+
+/* Section labels inside the modal: "Mode", "Brand colour". */
+.modal-section-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+body.modal-open { overflow: hidden; }
+
+/* ---- mode toggle ---- */
+.mode-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--surface);
+}
+.mode-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.mode-btn svg { width: 16px; height: 16px; }
+.mode-btn.active {
+  background: var(--brand-fill);
+  color: var(--on-brand);
+}
+
+/* Time based mode only. Light and dark stay side by side and the third
+   spans the row beneath them: two equal columns would put the longer label
+   in a box too narrow to read at 320px, and the full width row also signals
+   this is a different kind of choice, a rule for picking a mode rather than
+   a mode. Omit both rules in an app that ships the two button toggle. */
+.mode-btn-wide { grid-column: 1 / -1; }
+.mode-note {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* ---- swatch grid ---- */
+.swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.swatch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  font-size: 0.78rem;
+  text-align: left;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+/* Ringed in its own colour, plus a containment ring. On a light modal the
+   pale swatches reach only 1:1 against the surface on their own, so the
+   outer ring is what actually carries the active state, at 3.4:1. */
+.swatch.active {
+  border-color: var(--swatch-color);
+  box-shadow:
+    0 0 0 2px var(--swatch-color),
+    0 0 0 3px color-mix(in srgb, var(--ink) 50%, transparent);
+}
+.swatch-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--swatch-color);
+  border: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
+  flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+  .swatch-grid { grid-template-columns: 1fr; }
+}
+
+/* ======== 2. Edge Tray ======== */
+/* Fixed top right. Lets clicks through except on its children. */
+.hud-right {
+  position: fixed;
+  z-index: 800;            /* above content, below modals and any top banner */
+  top: var(--tray-top);
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  pointer-events: none;
+  transition: top 0.2s ease;  /* glides when a top banner comes or goes */
+}
+.hud-right > * { pointer-events: auto; }
+
+/* The tray: tab + column. Collapsed, the whole thing shifts right until only
+   the tab is left, flush with the edge. */
+.tray {
+  --tray-shift: calc(var(--glass-btn) + 8px + var(--edge));
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  transition: transform var(--tray-time) var(--tray-ease);
+}
+.tray.collapsed { transform: translateX(var(--tray-shift)); }
+
+.tray-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: var(--glass-btn);
+  padding: 0;
+  border-radius: 12px;
+  background: var(--surface);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid var(--surface-border);
+  box-shadow: var(--shadow);
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-radius var(--tray-time) var(--tray-ease);
+}
+.tray-tab svg { width: 16px; height: 16px; transition: transform var(--tray-time) var(--tray-ease); }
+/* At the edge it is a tab: flat on the side the screen cuts off. */
+.tray.collapsed .tray-tab { border-radius: 12px 0 0 12px; border-right: none; }
+.tray.collapsed .tray-tab svg { transform: rotate(180deg); }
+
+.tray-buttons,
+.tray-views {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.tray-buttons { margin-right: var(--edge); }
+
+/* Separates the views from the global actions. */
+.tray-rule {
+  width: 24px;
+  height: 1px;
+  margin: 2px 0;
+  background: color-mix(in srgb, var(--ink) 25%, transparent);
+}
+
+/* The buttons. */
+.glass-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--glass-btn);
+  height: var(--glass-btn);
+  padding: 0;
+  border-radius: 14px;
+  background: var(--surface);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid var(--surface-border);
+  box-shadow: var(--shadow);
+  color: var(--ink);
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.glass-btn:hover { transform: translateY(-1px); background: var(--surface-strong); }
+.glass-btn svg { width: 22px; height: 22px; }
+
+/* The buttons unroll: each fades in, slides back from the edge and grows, 18 ms after
+   the one above it. They move by `translate` and `scale`, leaving `transform` to the
+   hover lift, so the list repeats the hover transitions. After .glass-btn, so it wins.
+   A <nav> of views is one child here and moves as one step. */
+.tray-buttons > * {
+  transition:
+    opacity calc(var(--tray-time) * 0.8) ease,
+    translate var(--tray-time) var(--tray-ease),
+    scale var(--tray-time) var(--tray-ease),
+    transform 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+  /* Only opening is staggered: the delay comes from the state being entered. */
+  transition-delay: calc(var(--i, 0) * 18ms), calc(var(--i, 0) * 18ms), calc(var(--i, 0) * 18ms), 0s, 0s, 0s;
+}
+.tray-buttons > :nth-child(2) { --i: 1; }
+.tray-buttons > :nth-child(3) { --i: 2; }
+.tray-buttons > :nth-child(4) { --i: 3; }
+.tray-buttons > :nth-child(5) { --i: 4; }
+.tray-buttons > :nth-child(6) { --i: 5; }
+.tray-buttons > :nth-child(7) { --i: 6; }
+.tray-buttons > :nth-child(8) { --i: 7; }
+.tray-buttons > :nth-child(9) { --i: 8; }
+.tray-buttons > :nth-child(10) { --i: 9; }
+.tray-buttons > :nth-child(11) { --i: 10; }
+/* Add more nth-child lines if the tray holds more than eleven items. */
+.tray.collapsed .tray-buttons > * {
+  opacity: 0;
+  translate: 12px 0;   /* towards the edge it leaves by */
+  scale: 0.85;
+  transition-delay: 0s; /* collapsing, they all go at once */
+}
+
+/* The view on screen. */
+.glass-btn[aria-selected="true"],
+.glass-btn[aria-selected="true"]:hover {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+}
+
+/* Keyboard focus must be visible on glass. Use the app's focus style if it has one. */
+.tray-tab:focus-visible,
+.glass-btn:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  :root {
+    --glass-btn: 40px;
+    --edge: max(10px, calc(env(safe-area-inset-right) + 10px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud-right, .tray, .tray-tab, .tray-tab svg, .tray-buttons > *, .glass-btn, main, .brand {
+    transition-duration: 0.001ms !important;
+    transition-delay: 0s !important;
+  }
+}
+/* 5.1's content padding is left out: the map is full-bleed, so it keeps its own controls
+   away from the top right instead (.mapControls at the bottom right, .brand top left). */
+.tray-start-collapsed .tray { transform: translateX(var(--tray-shift)); transition: none; }
+.tray-start-collapsed .tray-buttons > * { opacity: 0; translate: 12px 0; scale: 0.85; transition: none; }
+.tray-start-collapsed main, .tray-start-collapsed .brand { transition: none; }
+.tray-start-collapsed .tray-tab { border-radius: 12px 0 0 12px; border-right: none; }
+.tray-start-collapsed .tray-tab svg { transform: rotate(180deg); }
+
+/* ======== 3. page tour ======== */
+.tour { position: fixed; inset: 0; z-index: 2000; }
+.tourHole {
+  position: fixed;
+  border-radius: 18px;
+  box-shadow: 0 0 0 200vmax rgba(8, 14, 10, 0.86), 0 0 24px 8px rgba(255, 255, 255, 0.35);
+  transition: left 0.3s ease, top 0.3s ease, width 0.3s ease, height 0.3s ease;
+  pointer-events: none;
+}
+.tourArrow { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.tourLine, .tourHead {
+  fill: none;
+  stroke: #f6f1e6;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* Drawn in over its own length; the script sets --len. */
+.tourLine { stroke-dasharray: var(--len, 600); stroke-dashoffset: var(--len, 600); animation: tour-draw 0.6s ease forwards; }
+@keyframes tour-draw { to { stroke-dashoffset: 0; } }
+.tourSkip {
+  position: fixed;
+  top: max(16px, calc(env(safe-area-inset-top) + 12px));
+  left: 16px;
+  padding: 8px 14px;
+  background: none;
+  border: 0;
+  color: #f6f1e6;
+  font-size: 1.05rem;
+}
+/* Placed by the script (§3): left and top set on each step. */
+.tourCard { position: fixed; box-sizing: border-box; width: min(460px, calc(100vw - 24px)); color: #f6f1e6; }
+/* No room for an arrow: the card sits on its own backing, over the lit element. */
+.tourCard.solid { padding: 14px 16px; border-radius: 16px; background: rgba(8, 14, 10, 0.92); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); }
+.tourText { font-size: 1.3rem; line-height: 1.35; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6); }
+.tourFoot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; }
+.tourNext { background: #f6f1e6; color: #1a221d; border: 0; border-radius: 999px; padding: 10px 22px; }
+.tourDots { display: flex; gap: 6px; }
+.tourDots > span { width: 7px; height: 7px; border-radius: 999px; background: rgba(246, 241, 230, 0.4); transition: width 0.2s ease; }
+.tourDots > .on { width: 20px; background: #f6f1e6; }
+body.touring { overflow: hidden; }
+.tourPicks { display: flex; flex-wrap: wrap; gap: 8px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tourHole { transition: none; }
+  .tourLine { animation: none; stroke-dashoffset: 0; }
+}
+
+/* ======== 4. update bar ======== */
+
+.update-notice {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 900;
+  background: color-mix(in srgb, var(--brand) 55%, var(--panel));
+  border-bottom: 1px solid var(--surface-border);
+  color: var(--on-brand);
+  font-size: 0.875rem;
+}
+.update-notice-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0.5rem 1rem;
+  padding-top: max(0.5rem, env(safe-area-inset-top));
+}
+.update-notice p { flex: 1 1 auto; min-width: 0; }
+.update-notice .btn { flex: none; }
+.update-notice .btn-quiet { color: var(--on-brand); }
+
+/* ======== 5. the app ======== */
+
+/* Tokens the specs ask for, mapped to the theme's. */
+:root {
+  --glass-btn: 44px;
+  --edge: max(16px, calc(env(safe-area-inset-right) + 16px));
+  --edge-left: max(16px, calc(env(safe-area-inset-left) + 16px));
+  --banner-h: 0px;
+  --tray-top: max(calc(var(--banner-h, 0px) + 14px), calc(env(safe-area-inset-top) + 14px));
+  --tray-time: 0.34s;
+  --tray-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --accent-fill: var(--brand-fill);
+  --on-accent: var(--on-brand);
+  --card-h: 0px;
+}
+/* Surfaces with words on them over the map: near solid, so the text keeps its contrast over any
+   part of the map (glass alone lets a dark street run under light-mode text). */
+:root, :root[data-mode="light"] { --panel: rgba(255, 255, 255, 0.92); --halo: #ffffff; }
+:root[data-mode="dark"] { --panel: rgba(16, 21, 18, 0.92); --halo: #0c100e; }
+
+@media (max-width: 480px) {
+  :root { --edge-left: max(10px, calc(env(safe-area-inset-left) + 10px)); }
+}
+
+html, body { overflow: hidden; overscroll-behavior: none; }
+body { position: fixed; inset: 0; }
+
+/* The tray: room for a long column on a short screen (9, more items than fit). */
+.tray-buttons {
+  /* Clear of the map's own buttons along the bottom. */
+  max-height: calc(100dvh - var(--tray-top) - var(--glass-btn) - 56px);
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: 2px 2px 12px;
+}
+.tray-buttons::-webkit-scrollbar { display: none; }
+.tray-quick { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.glass-btn[aria-pressed="true"],
+.glass-btn[aria-pressed="true"]:hover {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  border-color: transparent;
+  /* On, by more than its fill: a pale brand tint alone is under 3:1 against an off button. */
+  box-shadow: var(--shadow), inset 0 0 0 2px color-mix(in srgb, var(--on-brand) 75%, transparent);
+}
+.glass-btn span[data-icon] { display: inline-flex; }
+.langBtn { flex-direction: column; gap: 0; }
+.langBtn svg { width: 18px; height: 18px; }
+.langCode { font-size: 0.62rem; line-height: 1; letter-spacing: 0.04em; }
+
+/* Focus, visible on glass and on the map, in both modes. */
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* ---- buttons ---- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: var(--surface-strong);
+  border: 1px solid var(--surface-border);
+  color: var(--ink);
+  font-size: 0.95rem;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn svg { width: 18px; height: 18px; }
+.btn-primary { background: var(--brand-fill); color: var(--on-brand); border-color: color-mix(in srgb, var(--on-brand) 30%, transparent); }
+.btn-primary:hover { background: var(--brand-fill-strong); }
+.btn-quiet { background: transparent; border-color: transparent; }
+.pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--surface-strong);
+  border: 1px solid var(--surface-border);
+  color: var(--ink);
+  font-size: 0.85rem;
+}
+.pill:hover { background: var(--brand-fill); color: var(--on-brand); }
+
+/* ---- the map ---- */
+.mapWrap { position: fixed; inset: 0; }
+.map { position: absolute; inset: 0; background: color-mix(in srgb, var(--brand) 10%, var(--bg)); }
+.mapFail { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--ink); }
+
+.brand {
+  position: absolute;
+  z-index: 5;
+  top: var(--tray-top);
+  left: var(--edge-left);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 6px;
+  border-radius: 14px;
+  background: var(--panel);
+  max-width: calc(100vw - var(--glass-btn) - 24px - 3 * var(--edge-left));
+  transition: top 0.2s ease;
+}
+.brand img { width: 28px; height: 28px; border-radius: 8px; flex: none; }
+.brand h1 { font-size: 1.02rem; font-weight: 400; color: var(--brand-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.status {
+  position: absolute;
+  z-index: 6;
+  top: calc(var(--tray-top) + 52px);
+  left: var(--edge-left);
+  max-width: min(420px, calc(100vw - var(--glass-btn) - 3 * var(--edge-left) - 24px));
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 0.9rem;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0s;
+}
+.status.hidden { opacity: 0; transform: translateY(-6px); visibility: hidden; transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0.18s; }
+
+/* The map's own controls, a row at the bottom right under the tray's column (5.1), above the
+   card. A row rather than a column, so a phone's screen has room for both. */
+.mapControls {
+  position: absolute;
+  z-index: 5;
+  right: var(--edge);
+  /* Above MapLibre's attribution line along the very bottom. */
+  bottom: calc(max(38px, env(safe-area-inset-bottom) + 30px) + var(--card-h));
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  transition: bottom 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+#northBtn svg { transition: rotate 0.1s linear; }
+#northBtn:not(.turned) { opacity: 0.85; }
+
+/* MapLibre's attribution and scale, bottom left, readable on glass. */
+.maplibregl-ctrl-bottom-left { left: env(safe-area-inset-left); bottom: calc(env(safe-area-inset-bottom) + var(--card-h)); transition: bottom 0.22s ease; }
+.maplibregl-ctrl-attrib, .maplibregl-ctrl-scale { background: var(--panel) !important; color: var(--ink) !important; }
+.maplibregl-ctrl-attrib a { color: var(--brand-ink) !important; }
+.maplibregl-ctrl-attrib-button { background-color: var(--surface-strong) !important; }
+:root[data-mode="dark"] .maplibregl-ctrl-attrib-button { filter: invert(1); }
+.maplibregl-ctrl-scale { border-color: var(--ink) !important; font-size: 11px; }
+.maplibregl-canvas:focus-visible { outline: 3px solid var(--brand-ink); outline-offset: -3px; }
+
+/* ---- the card ---- */
+.card {
+  position: fixed;
+  z-index: 850;
+  left: var(--edge-left);
+  right: var(--edge-left);
+  bottom: max(16px, calc(env(safe-area-inset-bottom) + 10px));
+  max-width: 440px;
+  max-height: min(60vh, 520px);
+  overflow-y: auto;
+  padding: 16px 16px 14px;
+  background: var(--panel);
+  color: var(--ink);
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.2s ease, transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s linear 0s;
+}
+.card.hidden { opacity: 0; transform: translateY(16px); visibility: hidden; pointer-events: none; transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0.18s; }
+.cardClose { position: absolute; top: 10px; right: 10px; }
+.cardHead { display: flex; gap: 10px; align-items: center; padding-right: 40px; }
+.cardHead h2 { font-size: 1.1rem; font-weight: 400; color: var(--brand-ink); line-height: 1.25; }
+.cardSub { color: var(--muted-strong); font-size: 0.9rem; margin-top: 2px; }
+.cardBadge, .layerBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--badge);
+  /* A fixed-meaning accent, as the footer heart is: white on the layer's own dark colour. */
+  color: #ffffff;
+  border: 2px solid #ffffff;
+}
+.cardBadge svg, .layerBadge svg { width: 18px; height: 18px; }
+.cardImage { display: block; width: 100%; margin-top: 12px; border-radius: 12px; aspect-ratio: 16 / 9; object-fit: cover; background: var(--surface-strong); }
+.cardRows { margin-top: 10px; display: grid; gap: 4px; }
+.cardRows div { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid color-mix(in srgb, var(--ink) 12%, transparent); }
+.cardRows dt { color: var(--muted-strong); font-size: 0.9rem; }
+.cardRows dd { text-align: end; font-size: 0.95rem; }
+.cardSection { margin-top: 10px; }
+.cardSection summary { cursor: pointer; padding: 8px 0; color: var(--brand-ink); min-height: 44px; display: flex; align-items: center; }
+.cardNote { margin-top: 10px; line-height: 1.4; }
+.cardAt { margin-top: 10px; color: var(--muted-strong); font-size: 0.8rem; }
+.cardLink { display: inline-flex; min-height: 44px; align-items: center; color: var(--brand-ink); }
+
+/* ---- modals ---- */
+.modal-tall { max-width: 460px; max-height: 88vh; }
+.modal-note { font-size: 0.85rem; color: var(--muted-strong); line-height: 1.4; }
+.modal { color: var(--ink); }
+:root[data-mode="dark"] .modal { background: var(--panel); }
+
+/* The layers list. */
+.layersList { display: flex; flex-direction: column; gap: 14px; }
+.layerGroup h3 { font-size: 0.85rem; font-weight: 400; color: var(--muted-strong); margin: 4px 0 6px; }
+.layerRow { display: flex; align-items: center; gap: 8px; }
+.layerRow + .layerRow { margin-top: 6px; }
+.layerSwitch {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: var(--surface-strong);
+  border: 1px solid var(--surface-border);
+  color: var(--ink);
+  text-align: start;
+  transition: background 0.15s ease;
+}
+.layerSwitch[aria-checked="true"] { background: var(--brand-fill); color: var(--on-brand); }
+.layerSwitch[aria-checked="true"] .layerNote { color: color-mix(in srgb, var(--on-brand) 78%, transparent); }
+.layerText { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.layerName { font-size: 0.95rem; }
+.layerNote { font-size: 0.78rem; color: var(--muted-strong); overflow: hidden; text-overflow: ellipsis; }
+.layerNote.err, .layerHint.err { color: var(--error); }
+.layerHint { font-size: 0.8rem; color: var(--muted-strong); margin-top: 8px; }
+.switchTrack {
+  flex: none;
+  position: relative;
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 30%, transparent);
+  transition: background 0.18s ease;
+}
+.switchTrack span {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--halo);
+  transition: translate 0.18s ease;
+}
+[aria-checked="true"] > .switchTrack { background: var(--on-brand); }
+[aria-checked="true"] > .switchTrack span { translate: 18px 0; }
+[dir="rtl"] [aria-checked="true"] > .switchTrack span { translate: -18px 0; }
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin: 8px 0 4px;
+  padding: 0 12px;
+  border-radius: 14px;
+  background: var(--surface-strong);
+  border: 1px solid var(--surface-border);
+  color: var(--muted-strong);
+}
+.searchBox svg { width: 18px; height: 18px; }
+.searchBox input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--ink); font-size: 1rem; padding: 10px 0; outline: none; }
+.searchBox input::placeholder { color: var(--muted-strong); opacity: 1; }
+.searchBox:focus-within { outline: 2px solid var(--ink); outline-offset: 2px; }
+#omResults .layerRow { margin-top: 6px; }
+
+/* Settings' choices: radios drawn as rows. */
+.choiceList { display: flex; flex-direction: column; gap: 6px; }
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  color: var(--ink);
+  text-align: start;
+}
+.choice[aria-checked="true"] { background: var(--brand-fill); color: var(--on-brand); }
+.choice[aria-checked="true"] .choiceNote { color: color-mix(in srgb, var(--on-brand) 78%, transparent); }
+.choiceText { flex: 1; display: flex; flex-direction: column; }
+.choiceNote { font-size: 0.78rem; color: var(--muted-strong); }
+.choiceMark { width: 20px; height: 20px; border-radius: 50%; border: 2px solid currentColor; flex: none; }
+.choice[aria-checked="true"] .choiceMark { box-shadow: inset 0 0 0 4px var(--brand-fill), inset 0 0 0 10px currentColor; }
+
+/* Saving the map. */
+.saveBody { display: flex; flex-direction: column; gap: 10px; line-height: 1.4; }
+.saveMsg { font-size: 0.88rem; color: var(--muted-strong); }
+.saveActions { display: flex; flex-wrap: wrap; gap: 8px; }
+.saveBody progress { width: 100%; height: 10px; accent-color: var(--brand-ink); }
+
+/* The language list (docs/i18n-retrofit-spec.md 8.3). */
+.langList { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.langList li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+  padding: 8px 14px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  cursor: pointer;
+  text-align: start;
+}
+.langList li[aria-selected="true"] { background: var(--brand-fill); color: var(--on-brand); }
+.langList li svg { width: 18px; height: 18px; }
+
+.tourPicks .pill { min-height: 44px; }
+
+@media (max-width: 480px) {
+  .brand h1 { font-size: 0.95rem; }
+  .card { left: var(--edge-left); right: var(--edge-left); max-width: none; }
+}
+@media (min-width: 640px) {
+  .card { right: auto; width: 420px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card, .status, .mapControls, .switchTrack span { transition-duration: 0.001ms !important; }
+}
+
+/* Above the tray (800) and the update bar (900), as edge-tray-spec.md 8.7 orders them. */
+.modal-backdrop { z-index: 1000; }
