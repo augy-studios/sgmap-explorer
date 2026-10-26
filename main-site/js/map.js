@@ -161,6 +161,17 @@ function storedView() {
   return null;
 }
 
+// A link to a spot on the map, as the Telegram bot sends: ?at=lat,lng&z=zoom (and &layers=,
+// read by js/layers.js). The map opens there, with a pin on the spot.
+export function linkedSpot(search = location.search) {
+  const q = new URLSearchParams(search);
+  const [lat, lng] = String(q.get("at") || "").split(",").map(Number);
+  if (!(lat > BOUNDS[0][1] && lat < BOUNDS[1][1] && lng > BOUNDS[0][0] && lng < BOUNDS[1][0])) return null;
+  const z = Number(q.get("z"));
+  return { center: [lng, lat], zoom: Number.isFinite(z) ? Math.min(18, Math.max(10, z)) : 15, bearing: 0, pitch: 0 };
+}
+const linked = typeof location === "undefined" ? null : linkedSpot();
+
 function keepView() {
   try {
     const c = map.getCenter();
@@ -196,6 +207,13 @@ function meData() {
 }
 
 function addMe() {
+  if (linked && !map.getSource("linked")) {
+    map.addSource("linked", { type: "geojson", data: { type: "Feature", properties: {}, geometry: { type: "Point", coordinates: linked.center } } });
+    map.addLayer({
+      id: "linked-pin", type: "circle", source: "linked",
+      paint: { "circle-radius": 9, "circle-color": "#b42318", "circle-stroke-color": "#ffffff", "circle-stroke-width": 3 },
+    });
+  }
   if (!map.getSource(ME_SOURCE)) map.addSource(ME_SOURCE, { type: "geojson", data: meData() });
   if (!map.getLayer("me-accuracy")) {
     map.addLayer({ id: "me-accuracy", type: "fill", source: ME_SOURCE, filter: ["==", ["get", "kind"], "accuracy"], paint: { "fill-color": "#1a73e8", "fill-opacity": 0.12 } });
@@ -210,7 +228,7 @@ function addMe() {
 
 // Kept on top: called after js/layers.js puts its layers back.
 export function raiseMe() {
-  for (const id of ["me-accuracy", "me-dot"]) if (map.getLayer(id)) map.moveLayer(id);
+  for (const id of ["linked-pin", "me-accuracy", "me-dot"]) if (map.getLayer(id)) map.moveLayer(id);
 }
 
 function onFix(pos) {
@@ -357,7 +375,7 @@ export function initMap(el) {
     el.innerHTML = `<p class="mapFail">${t("map.no-webgl")}</p>`;
     return null;
   }
-  const view = storedView();
+  const view = linked || storedView();
   map = new ml.Map({
     container: el,
     style: styleFor(),

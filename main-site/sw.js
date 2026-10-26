@@ -5,7 +5,7 @@
 // Bump VERSION on every deploy that changes anything this worker serves. The browser compares
 // this file byte for byte, so an unchanged VERSION means nobody is offered the update bar
 // (js/sw-update.js) and the old cache keeps answering.
-const VERSION = "v1";
+const VERSION = "v2";
 const CACHE = `sgmap-${VERSION}`;
 
 const ASSETS = [

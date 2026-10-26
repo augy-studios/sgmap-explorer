@@ -53,6 +53,32 @@ export async function getToken({ renew = false } = {}) {
   return memo.token;
 }
 
+// OneMap's search for a place: an address, a building, a road or a postal code. Answers
+// { name, lat, lng } for the best match, or null. With the token when it's set up; OneMap's
+// search also answers without one.
+const SEARCH_URL = `${ONEMAP}/api/common/elastic/search`;
+
+export async function searchPlace(text) {
+  const url = new URL(SEARCH_URL);
+  url.searchParams.set("searchVal", String(text).slice(0, 80));
+  url.searchParams.set("returnGeom", "Y");
+  url.searchParams.set("getAddrDetails", "Y");
+  url.searchParams.set("pageNum", "1");
+  let data;
+  if (onemapConfigured()) data = await onemapGet(url);
+  else {
+    const r = await fetch(url, { headers: { accept: "application/json" }, signal: AbortSignal.timeout(10_000) });
+    if (!r.ok) throw new UpstreamError(`OneMap search replied ${r.status}`);
+    data = await r.json();
+  }
+  const hit = Array.isArray(data?.results) ? data.results[0] : null;
+  const lat = Number(hit?.LATITUDE);
+  const lng = Number(hit?.LONGITUDE);
+  if (!hit || !Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  const name = String(hit.BUILDING && hit.BUILDING !== "NIL" ? hit.BUILDING : hit.SEARCHVAL || text).slice(0, 80);
+  return { name: name.toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase()), lat, lng };
+}
+
 // A GET with the token, and one more try on a new token if OneMap has stopped taking the old one.
 export async function onemapGet(url) {
   const send = (token) =>

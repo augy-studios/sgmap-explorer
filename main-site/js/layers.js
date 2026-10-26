@@ -810,6 +810,8 @@ export function initLayers() {
 
   const on = readJson(ON_KEY, DEFAULT_ON);
   for (const id of Array.isArray(on) ? on : DEFAULT_ON) setLayer(id, true);
+  // A link's layers (?layers=carparks,rainfall, from the Telegram bot): on as well.
+  for (const id of new URLSearchParams(location.search).get("layers")?.split(",") || []) if (defs.has(id)) setLayer(id, true);
   syncQuick();
 }
 

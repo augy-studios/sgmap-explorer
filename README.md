@@ -1,7 +1,7 @@
 # SG Map Explorer
 
 A live 3D map of Singapore, as a PWA by UwU Apps: MRT, buses, carparks, traffic, weather and air
-quality, layer by layer.
+quality, layer by layer. At <https://sgmap.uwuapps.org>.
 
 - **The map**: MapLibre GL JS over OpenFreeMap's vector map, with the buildings in 3D, or over
   OneMap's or OpenStreetMap's own tiles with the same 3D buildings on top. Two fingers dragged up
@@ -14,12 +14,18 @@ quality, layer by layer.
   themes.
 - **Offline**: the app shell, the map's tiles as they're seen, and a Download button for the whole
   of Singapore's map.
+- **A Telegram bot**: `/weather`, `/rain`, `/psi` and `/carpark` from the same data, as Telegram
+  Rich Messages, each with a button that opens the map at that spot. [SETUP.md](SETUP.md) sets
+  it up.
+- **Links to a spot**: `https://sgmap.uwuapps.org/?at=1.3,103.85&z=16&layers=carparks` opens
+  the map there with a pin and those layers on.
 
 ## What's here
 
 | Path | What |
 |---|---|
 | `main-site/` | The site Vercel serves (its Root Directory), with the serverless functions in `main-site/api/`. See [main-site/README.md](main-site/README.md). |
+| `SETUP.md` | Setting up the Telegram bot: @BotFather, the Vercel variables, `setWebhook`, testing. |
 | `migrations/` | SQL to run by hand in Supabase's SQL editor, in order. Never edited once run: a change is a new file. |
 | `scripts/serve-stub.mjs` | The site on `localhost` with made-up layer data, for working without API keys. |
 | `scripts/screenshots.mjs` | Takes the manifest's two screenshots with Playwright. |
@@ -29,11 +35,14 @@ quality, layer by layer.
 ## Deploying
 
 1. Vercel project: Root Directory `main-site`, no build command, Node 20 or later. Vercel Pro, so
-   the cron's 300-second run is allowed.
+   the cron's 300-second run is allowed. Domain: `sgmap.uwuapps.org`.
 2. Environment variables: the names in [main-site/.env.example](main-site/.env.example).
 3. Supabase (optional, recommended): run `migrations/0001_server_cache.sql` in the SQL editor,
-   then set `SUPABASE_URL` and `SUPABASE_SERVICE_KEY`.
-4. The cron (`vercel.json`) runs daily at 03:20 Singapore time and sends `CRON_SECRET`.
+   then set `SUPABASE_URL` and `SUPABASE_SERVICE_KEY`. Slow layers fill it on demand.
+4. The cron (`vercel.json`) runs weekly, Mondays 03:00 Singapore time, with `CRON_SECRET`: only
+   the island-wide bicycle parking sweep. To fill it the first time, call it once by hand:
+   `curl -H "Authorization: Bearer <CRON_SECRET>" "https://sgmap.uwuapps.org/api/cron?sweep=1"`.
+5. The Telegram bot: [SETUP.md](SETUP.md).
 
 ## Working on it
 

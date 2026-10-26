@@ -46,7 +46,9 @@ test("every route replies through sendJson, sendError or sendImage", () => {
 });
 
 test("keys are read only where they go into an upstream request", () => {
-  const allowed = new Set(["_lib/http.js", "_lib/onemap.js", "_lib/supabase.js", "cron.js"]);
+  // The cron and the webhook read their secrets only to compare them; site.js reads the site's
+  // own address.
+  const allowed = new Set(["_lib/http.js", "_lib/onemap.js", "_lib/supabase.js", "_lib/telegram.js", "_lib/site.js", "cron.js", "telegram/webhook.js"]);
   for (const f of files) {
     const src = code(f);
     for (const m of src.matchAll(/process\.env\.([A-Z_]+)/g)) {
@@ -54,9 +56,9 @@ test("keys are read only where they go into an upstream request", () => {
       assert.fail(`${rel(f)} reads process.env.${m[1]}`);
     }
   }
-  // cron.js reads CRON_SECRET only to compare it.
-  assert.match(code(join(API, "cron.js")), /process\.env\.CRON_SECRET/);
   assert.doesNotMatch(code(join(API, "cron.js")), /process\.env\.(?!CRON_SECRET)/);
+  assert.doesNotMatch(code(join(API, "telegram/webhook.js")), /process\.env\.(?!TELEGRAM_WEBHOOK_SECRET|TELEGRAM_BOT_USERNAME)/);
+  assert.doesNotMatch(code(join(API, "_lib/site.js")), /process\.env\.(?!SITE_URL)/);
 });
 
 // ---------- each layer's trim ----------

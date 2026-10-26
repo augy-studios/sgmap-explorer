@@ -6,10 +6,11 @@
     "functions": {
         "api/cron.js": { "maxDuration": 300 },
         "api/layer/[id].js": { "maxDuration": 60 },
-        "api/radar.js": { "maxDuration": 30 }
+        "api/radar.js": { "maxDuration": 30 },
+        "api/telegram/webhook.js": { "maxDuration": 30 }
     },
     "crons": [
-        { "path": "/api/cron", "schedule": "20 19 * * *" }
+        { "path": "/api/cron", "schedule": "0 19 * * 0" }
     ],
     "headers": [
         {

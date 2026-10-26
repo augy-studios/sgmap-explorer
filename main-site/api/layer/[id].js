@@ -2,9 +2,12 @@
 // its upstream sent, an allow-list of fields, with a Cache-Control set to how often the feed
 // changes, so Vercel's edge answers most requests and the upstreams see a few a minute at most.
 //
-// A layer with a `snapshot` (bus stops, taxi stands, bicycle parking, OneMap's themes list) is
-// served from Supabase while the copy the cron kept is fresh (api/_lib/store.js), and kept there
-// whenever it's fetched afresh.
+// A layer with a `snapshot` (bus stops, taxi stands, OneMap's themes list, and the island-wide
+// bicycle parking the weekly cron gathers) is kept in Supabase (api/_lib/store.js), filled on
+// demand: served from there while fresh, fetched again from upstream once stale and kept, and
+// the stale copy served if the upstream doesn't answer. Vercel's edge, in front, serves its own
+// copy while it fetches a new one behind (stale-while-revalidate), so a stale copy costs one slow
+// request a day at most, never one per visitor.
 
 import { LAYERS } from "../_layers/index.js";
 import { UpstreamError } from "../_lib/http.js";
