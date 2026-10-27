@@ -1,8 +1,34 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" dir="ltr">
 
 <head>
-    <!-- Google tag (gtag.js) -->
+    <!-- The saved theme and the Edge Tray's state, before first paint. Keep "sgmap" in step with
+         APP_KEY in js/theme.js and the tray key with TRAY_KEY in js/tray.js. -->
+    <script>
+        (function () {
+            var k = "sgmap";
+            var m = "light", c = "classic";
+            try {
+                m = localStorage.getItem(k + ".mode") || "light";
+                c = localStorage.getItem(k + ".colorTheme") || "classic";
+                // The two Edge Trays, closed before first paint if they were left closed.
+                if (localStorage.getItem(k + ".trayOpen") === "0") document.documentElement.classList.add("tray-start-collapsed", "side-collapsed");
+                if (localStorage.getItem(k + ".topTrayOpen") === "0") document.documentElement.classList.add("top-start-collapsed", "top-collapsed");
+            } catch (e) { /* the defaults */ }
+            // Time based mode. Resolved here rather than in theme.js because theme.js runs after
+            // first paint, and an evening reader would otherwise watch a white page turn dark.
+            // Keep the two hours in step with LIGHT_FROM_HOUR and LIGHT_UNTIL_HOUR in js/theme.js.
+            document.documentElement.setAttribute("data-mode-preference", m);
+            if (m === "time") {
+                var h = new Date().getHours();
+                m = h >= 9 && h < 18 ? "light" : "dark";
+            }
+            document.documentElement.setAttribute("data-mode", m);
+            document.documentElement.setAttribute("data-color-theme", c);
+        })();
+    </script>
+
+    <!-- Google Analytics (gtag.js). -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-FMCYFTFPEL"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
@@ -14,48 +40,192 @@
 
         gtag('config', 'G-FMCYFTFPEL');
     </script>
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9715826188316382"
-        crossorigin="anonymous"></script>
 
     <link rel="manifest" href="/manifest.json" />
 
     <meta charset="utf-8">
-    <title>SG Map Explorer | UwU Apps</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="A simple exploresg app; view live exploresg at a glance!">
+    <title data-i18n="app.title">SG Map Explorer | UwU Apps</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="description" data-i18n-attr="content:app.description" content="A live 3D map of Singapore: MRT, buses, carparks, traffic, weather and air quality, layer by layer.">
 
+    <link rel="canonical" href="https://sgmap.uwuapps.org/">
     <meta property="og:type" content="website">
+    <meta property="og:url" content="https://sgmap.uwuapps.org/" />
     <meta property="og:title" content="SG Map Explorer | UwU Apps" />
     <meta property="og:site_name" content="UwU Apps" />
-    <meta property="og:description" content="A simple exploresg app; view live exploresg at a glance!" />
+    <meta property="og:description" content="A live 3D map of Singapore: MRT, buses, carparks, traffic, weather and air quality, layer by layer." />
 
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Jua">
+    <link rel="preconnect" href="https://tiles.openfreemap.org" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/vendor/maplibre-5.24.0/maplibre-gl.css">
     <link rel="stylesheet" href="/style.css">
     <meta name="theme-color" content="#ccffcc" />
 
     <!-- Embed Image -->
     <link rel="apple-touch-icon" href="/ESG-main.png">
-    <link rel="icon" href="/favicon.ico">
-    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" href="/ESG-192.png" type="image/png">
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:image:src" content="/ESG-main.png">
-    <meta property="og:image" content="/ESG-main.png" />
+    <meta name="twitter:image:src" content="https://sgmap.uwuapps.org/ESG-main.png">
+    <meta property="og:image" content="https://sgmap.uwuapps.org/ESG-main.png" />
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <script defer="" src="https://use.fontawesome.com/releases/v6.5.2/js/all.js"></script>
+    <script defer src="/vendor/maplibre-5.24.0/maplibre-gl.js"></script>
+    <script type="module" src="/js/app.js"></script>
 </head>
 
 <body>
-    SG Map Explorer
+    <!-- The Edge Trays (docs/edge-tray-spec.md), first in the body, outside anything transformed.
+         The top one holds the layer switches; the side one the map's buttons and the settings. -->
+    <div class="hud-top">
+        <div id="topTray" class="ttray">
+            <div id="topTrayButtons" class="ttray-buttons" role="group" data-i18n-attr="aria-label:tray.quick" aria-label="Map layers">
+                <button class="glass-btn" id="trayLayers" type="button" aria-haspopup="dialog"
+                    data-i18n-attr="aria-label:tray.layers, title:tray.layers" aria-label="All layers" title="All layers"><span data-icon="layers"></span></button>
+                <span class="ttray-rule" aria-hidden="true"></span>
+                <div id="trayQuick" class="tray-quick">
+                    <button class="glass-btn" type="button" data-quick-layer="mrt" aria-pressed="false"
+                        data-i18n-attr="aria-label:layer.mrt.name, title:layer.mrt.name" aria-label="MRT and LRT" title="MRT and LRT"><span data-icon="train"></span></button>
+                    <button class="glass-btn" type="button" data-quick-layer="bus-stops" aria-pressed="false"
+                        data-i18n-attr="aria-label:layer.bus-stops.name, title:layer.bus-stops.name" aria-label="Bus stops" title="Bus stops"><span data-icon="bus"></span></button>
+                    <button class="glass-btn" type="button" data-quick-layer="weather-2h" aria-pressed="false"
+                        data-i18n-attr="aria-label:layer.weather-2h.name, title:layer.weather-2h.name" aria-label="2-hour forecast" title="2-hour forecast"><span data-icon="partly"></span></button>
+                    <button class="glass-btn" type="button" data-quick-layer="carparks" aria-pressed="false"
+                        data-i18n-attr="aria-label:layer.carparks.name, title:layer.carparks.name" aria-label="Carparks" title="Carparks"><span data-icon="parking"></span></button>
+                    <button class="glass-btn" type="button" data-quick-layer="taxis" aria-pressed="false"
+                        data-i18n-attr="aria-label:layer.taxis.name, title:layer.taxis.name" aria-label="Available taxis" title="Available taxis"><span data-icon="taxi"></span></button>
+                    <button class="glass-btn" type="button" data-quick-layer="traffic-cams" aria-pressed="false"
+                        data-i18n-attr="aria-label:layer.traffic-cams.name, title:layer.traffic-cams.name" aria-label="Traffic cameras" title="Traffic cameras"><span data-icon="camera"></span></button>
+                </div>
+            </div>
+            <!-- After the buttons: below them on screen. The chevron points up, "push away". -->
+            <button id="topTrayTab" class="ttray-tab" type="button" aria-controls="topTrayButtons" aria-expanded="true"
+                aria-label="Hide layer switches" title="Hide layer switches">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" aria-hidden="true">
+                    <path d="m5 15 7-7 7 7" />
+                </svg>
+            </button>
+        </div>
+    </div>
 
-    <script src="/script.js"></script>
+    <div class="hud-right">
+        <div id="tray" class="tray">
+            <button id="trayTab" class="tray-tab" type="button" aria-controls="trayButtons" aria-expanded="true"
+                aria-label="Hide menu" title="Hide menu">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" aria-hidden="true">
+                    <path d="m9 5 7 7-7 7" />
+                </svg>
+            </button>
 
-    <script>
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.register('/sw.js');
-        }
-    </script>
-    
+            <div id="trayButtons" class="tray-buttons">
+                <div id="mapControls" class="tray-group" role="group" data-i18n-attr="aria-label:controls.label" aria-label="Map controls">
+                    <button class="glass-btn" id="locateBtn" type="button" aria-pressed="false"
+                        data-i18n-attr="aria-label:controls.locate, title:controls.locate" aria-label="Show where I am" title="Show where I am"><span data-icon="locate"></span></button>
+                    <button class="glass-btn" id="compassBtn" type="button" aria-pressed="false"
+                        data-i18n-attr="aria-label:controls.compass, title:controls.compass" aria-label="Face my direction" title="Face my direction"><span data-icon="compass"></span></button>
+                    <button class="glass-btn" id="pitchBtn" type="button" aria-pressed="false"
+                        data-i18n-attr="aria-label:controls.pitch, title:controls.pitch" aria-label="3D view" title="3D view"><span data-icon="cube"></span></button>
+                    <button class="glass-btn" id="northBtn" type="button"
+                        data-i18n-attr="aria-label:controls.north, title:controls.north" aria-label="North up, flat" title="North up, flat"><span data-icon="north"></span></button>
+                </div>
+
+                <span class="tray-rule" aria-hidden="true"></span>
+
+                <button class="glass-btn" id="traySave" type="button" aria-haspopup="dialog"
+                    data-i18n-attr="aria-label:tray.save, title:tray.save" aria-label="Save the map for offline" title="Save the map for offline"><span data-icon="download"></span></button>
+                <button class="glass-btn" id="themeBtn" type="button" aria-haspopup="dialog"
+                    data-i18n-attr="aria-label:tray.theme, title:tray.theme" aria-label="Theme" title="Theme"><span data-icon="sun"></span></button>
+                <button class="glass-btn langBtn" type="button" data-language-switcher></button>
+                <button class="glass-btn" id="settingsBtn" type="button" aria-haspopup="dialog"
+                    data-i18n-attr="aria-label:tray.settings, title:tray.settings" aria-label="Settings" title="Settings"><span data-icon="settings"></span></button>
+            </div>
+        </div>
+    </div>
+
+    <main id="view-map" class="mapWrap">
+        <header class="brand glass">
+            <img src="/ESG-192.png" alt="" width="28" height="28">
+            <h1 data-i18n="app.name">SG Map Explorer</h1>
+        </header>
+
+        <div id="map" class="map" role="region" aria-label="Map of Singapore"></div>
+
+        <p id="status" class="status glass hidden" role="status" aria-live="polite"></p>
+
+
+    </main>
+
+    <!-- The card a tapped marker opens: over the tray's foot on a phone, under every modal. -->
+    <section id="card" class="card glass hidden" role="dialog" aria-modal="false" aria-labelledby="cardTitle">
+            <button class="icon-btn small cardClose" id="cardClose" type="button"
+                data-i18n-attr="aria-label:common.close, title:common.close" aria-label="Close" title="Close"><span data-icon="close"></span></button>
+            <div id="cardBody"></div>
+        </section>
+
+    <!-- Layers -->
+    <div class="modal-backdrop hidden" id="layersModal">
+        <div class="modal glass modal-tall" role="dialog" aria-modal="true" aria-labelledby="layersTitle">
+            <div class="modal-head">
+                <h2 id="layersTitle" data-i18n="layers.title">Map layers</h2>
+                <button class="icon-btn small" type="button" data-close-modal="layersModal"
+                    data-i18n-attr="aria-label:common.close, title:common.close" aria-label="Close" title="Close"><span data-icon="close"></span></button>
+            </div>
+            <p class="modal-note" data-i18n="layers.intro">Turn on what you want to see. Live layers update while the map is open.</p>
+            <div id="layersList" class="layersList"></div>
+            <p class="modal-note" data-i18n="layers.sources">Data: LTA DataMall, NEA and PUB through data.gov.sg, OneMap, URA, OpenFreeMap and OpenStreetMap contributors.</p>
+        </div>
+    </div>
+
+    <!-- Save the map for offline -->
+    <div class="modal-backdrop hidden" id="saveModal">
+        <div class="modal glass" role="dialog" aria-modal="true" aria-labelledby="saveTitle">
+            <div class="modal-head">
+                <h2 id="saveTitle" data-i18n="save.title">Singapore's map, offline</h2>
+                <button class="icon-btn small" type="button" data-close-modal="saveModal"
+                    data-i18n-attr="aria-label:common.close, title:common.close" aria-label="Close" title="Close"><span data-icon="close"></span></button>
+            </div>
+            <div id="saveBody" class="saveBody"></div>
+        </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="modal-backdrop hidden" id="settingsModal">
+        <div class="modal glass" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+            <div class="modal-head">
+                <h2 id="settingsTitle" data-i18n="settings.title">Settings</h2>
+                <button class="icon-btn small" type="button" data-close-modal="settingsModal"
+                    data-i18n-attr="aria-label:common.close, title:common.close" aria-label="Close" title="Close"><span data-icon="close"></span></button>
+            </div>
+            <p class="modal-section-label" id="basemapLabel" data-i18n="settings.basemap">Base map</p>
+            <div id="basemapList" class="choiceList" role="radiogroup" aria-labelledby="basemapLabel"></div>
+            <p class="modal-section-label" data-i18n="settings.tour">Show me around</p>
+            <div id="tourPicks" class="tourPicks"></div>
+            <p class="modal-note" data-i18n="settings.tour-note">The map shows you around the first time you open it. Pick it to see the tour again.</p>
+            <p class="modal-section-label" data-i18n="settings.gestures">Gestures</p>
+            <p class="modal-note" data-i18n="settings.gestures-note">Drag two fingers up or down to tilt the map, twist them to turn it, and pinch to zoom.</p>
+        </div>
+    </div>
+
+    <!-- Theme (docs/uwuapps-theme.md 5) -->
+    <div class="modal-backdrop hidden" id="themeModal">
+        <div class="modal glass" role="dialog" aria-modal="true" aria-labelledby="themeModalTitle">
+            <div class="modal-head">
+                <h2 id="themeModalTitle" data-i18n="theme.title">Theme</h2>
+                <button class="icon-btn small" type="button" data-close-modal="themeModal"
+                    data-i18n-attr="aria-label:common.close, title:common.close" aria-label="Close" title="Close"><span data-icon="close"></span></button>
+            </div>
+            <p class="modal-section-label" data-i18n="theme.mode">Mode</p>
+            <div class="mode-toggle" id="modeToggle">
+                <button class="mode-btn" type="button" data-mode="light" aria-pressed="false"><span data-icon="sun"></span><span data-i18n="theme.mode.light">Light</span></button>
+                <button class="mode-btn" type="button" data-mode="dark" aria-pressed="false"><span data-icon="moon"></span><span data-i18n="theme.mode.dark">Dark</span></button>
+                <button class="mode-btn mode-btn-wide" type="button" data-mode="time" aria-pressed="false"><span data-icon="clock"></span><span data-i18n="theme.mode.time">Time-based</span></button>
+            </div>
+            <p class="mode-note" id="modeNote" hidden></p>
+            <p class="modal-section-label" data-i18n="theme.brand">Brand colour</p>
+            <div class="swatch-grid" id="swatchGrid"></div>
+        </div>
+    </div>
 </body>
 
 </html>

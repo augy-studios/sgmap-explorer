@@ -3,8 +3,23 @@
     "version": 2,
     "cleanUrls": true,
     "regions": ["sin1"],
-    "rewrites": [{
-        "source": "/",
-        "destination": "/"
-    }]
+    "functions": {
+        "api/cron.js": { "maxDuration": 300 },
+        "api/layer/[id].js": { "maxDuration": 60 },
+        "api/radar.js": { "maxDuration": 30 },
+        "api/telegram/webhook.js": { "maxDuration": 30 }
+    },
+    "crons": [
+        { "path": "/api/cron", "schedule": "0 19 * * 0" }
+    ],
+    "headers": [
+        {
+            "source": "/sw.js",
+            "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+        },
+        {
+            "source": "/i18n/(.*).json",
+            "headers": [{ "key": "Content-Type", "value": "application/json" }]
+        }
+    ]
 }

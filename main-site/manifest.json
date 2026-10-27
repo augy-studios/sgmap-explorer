@@ -1,34 +1,44 @@
 {
     "name": "SG Map Explorer by UwU Apps",
     "short_name": "SG Map Explorer",
-    "description": "A simple exploresg app; view live exploresg at a glance!",
+    "description": "A live 3D map of Singapore: MRT, buses, carparks, traffic, weather and air quality, layer by layer.",
     "icons": [{
-            "src": "ESG-192.png",
+            "src": "/ESG-192.png",
             "type": "image/png",
-            "sizes": "192x192"
+            "sizes": "192x192",
+            "purpose": "any"
         },
         {
-            "src": "ESG-512.png",
+            "src": "/ESG-512.png",
             "type": "image/png",
-            "sizes": "512x512"
+            "sizes": "512x512",
+            "purpose": "any"
+        },
+        {
+            "src": "/ESG-maskable-512.png",
+            "type": "image/png",
+            "sizes": "512x512",
+            "purpose": "maskable"
         }
     ],
     "screenshots": [{
             "src": "/images/screenshot_1.png",
             "type": "image/png",
             "sizes": "1080x2340",
-            "form_factor": "narrow"
+            "form_factor": "narrow",
+            "label": "The map with MRT lines, the 2-hour forecast and the Edge Tray"
         },
         {
             "src": "/images/screenshot_2.png",
             "type": "image/png",
             "sizes": "1920x1080",
-            "form_factor": "wide"
+            "form_factor": "wide",
+            "label": "Singapore in 3D with live layers"
         }
     ],
     "start_url": "/",
-    "theme_color": "#cfc",
-    "background_color": "#cfc",
+    "theme_color": "#ccffcc",
+    "background_color": "#ccffcc",
     "display": "standalone",
     "display_override": ["fullscreen", "minimal-ui", "window-controls-overlay"],
     "orientation": "any",
@@ -37,8 +47,9 @@
     "scope": "/",
     "lang": "en",
     "categories": [
-        "entertainment",
-        "lifestyle",
+        "navigation",
+        "travel",
+        "weather",
         "utilities"
     ]
 }

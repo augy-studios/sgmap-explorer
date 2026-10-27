@@ -1,0 +1,15 @@
+# Agents' worktrees (the workspace's branching rules).
+.claude/worktrees/
+
+node_modules/
+
+# Env files are the owner's alone; only the example is committed.
+.env
+.env.*
+!.env.example
+
+.vercel/
+.DS_Store
+
+# Playwright's output, from scripts/screenshots.mjs.
+test-results/

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#ccffcc"/>
+  <g stroke="#1f6b3d" stroke-width="20" stroke-linejoin="round" stroke-linecap="round">
+    <!-- the folded map, three panels -->
+    <path d="M84 170 L196 136 L316 170 L428 136 L428 388 L316 422 L196 388 L84 422 Z" fill="#f3fff3"/>
+    <path d="M196 136 L316 170 L316 422 L196 388 Z" fill="#3fae5c"/>
+  </g>
+  <!-- the face: u u, w, and blush -->
+  <g fill="none" stroke="#1f6b3d" stroke-width="18" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M128 262 q0 44 22 44 q22 0 22 -44"/>
+    <path d="M340 262 q0 44 22 44 q22 0 22 -44"/>
+    <path d="M226 326 q10 22 20 10 q10 -10 10 -10 q0 0 10 10 q10 12 20 -10" stroke="#f3fff3"/>
+  </g>
+  <ellipse cx="148" cy="342" rx="22" ry="12" fill="#fba3a8"/>
+  <ellipse cx="364" cy="342" rx="22" ry="12" fill="#fba3a8"/>
+  <!-- the pin -->
+  <g stroke="#1f6b3d" stroke-width="18" stroke-linejoin="round">
+    <path d="M256 236 C256 236 196 168 196 128 A60 60 0 0 1 316 128 C316 168 256 236 256 236 Z" fill="#fcca6e"/>
+    <circle cx="256" cy="128" r="20" fill="#f3fff3"/>
+  </g>
+</svg>

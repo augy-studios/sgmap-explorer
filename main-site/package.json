@@ -1,0 +1,14 @@
+{
+  "name": "sgmap-explorer-site",
+  "private": true,
+  "description": "SG Map Explorer: a static site plus Vercel Functions in api/.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test \"tests/*.test.mjs\"",
+    "check": "node tests/check-syntax.mjs",
+    "i18n": "node i18n/check-keys.js"
+  }
+}

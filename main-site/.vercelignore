@@ -1,0 +1,4 @@
+# Not served: the tests and the i18n key check run from the command line only.
+tests/
+i18n/check-keys.js
+README.md
