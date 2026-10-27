@@ -225,3 +225,33 @@ test("data is escaped for Rich Markdown, and tables keep to one line a row", () 
   assert.equal(t.split("\n").length, 3);
   assert.match(t, /Car\\\|park A/);
 });
+
+test("/link alone gives the map, and says how to get a link to a place", async () => {
+  await call({ body: msg("/link") });
+  assert.equal(sent[0].method, "sendMessage");
+  assert.match(sent[0].body.text, /^The map: https:\/\/sgmap\.uwuapps\.org\//);
+  assert.equal(sent[0].body.reply_markup.inline_keyboard[0][0].url, "https://sgmap.uwuapps.org/");
+});
+
+test("/link <place> links the map at that place", async () => {
+  await call({ body: msg("/link Bishan") });
+  const url = new URL(sent[0].body.reply_markup.inline_keyboard[0][0].url);
+  assert.equal(url.searchParams.get("at"), "1.35000,103.83900");
+  assert.equal(url.searchParams.get("z"), "16");
+  assert.match(sent[0].body.text, /The map at Bishan: https:/);
+  await call({ body: msg("/link nowhere at all") });
+  assert.match(sent[1].body.text, /Couldn't find/);
+});
+
+test("a location sent in reply to the bot gets a map link there", async () => {
+  await call({ body: msg(undefined, { location: { latitude: 1.3, longitude: 103.85 }, reply_to_message: { message_id: 4, from: { id: 1, is_bot: true } } }) });
+  assert.equal(sent[0].method, "sendMessage");
+  assert.equal(new URL(sent[0].body.reply_markup.inline_keyboard[0][0].url).searchParams.get("at"), "1.30000,103.85000");
+});
+
+test("/help lists /link and /start", async () => {
+  await call({ body: msg("/help") });
+  const md = sent[0].body.rich_message.markdown;
+  assert.match(md, /\| \/link \|/);
+  assert.match(md, /\| \/start \|/);
+});

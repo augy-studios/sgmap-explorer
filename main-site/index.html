@@ -11,7 +11,9 @@
             try {
                 m = localStorage.getItem(k + ".mode") || "light";
                 c = localStorage.getItem(k + ".colorTheme") || "classic";
-                if (localStorage.getItem(k + ".trayOpen") === "0") document.documentElement.classList.add("tray-start-collapsed");
+                // The two Edge Trays, closed before first paint if they were left closed.
+                if (localStorage.getItem(k + ".trayOpen") === "0") document.documentElement.classList.add("tray-start-collapsed", "side-collapsed");
+                if (localStorage.getItem(k + ".topTrayOpen") === "0") document.documentElement.classList.add("top-start-collapsed", "top-collapsed");
             } catch (e) { /* the defaults */ }
             // Time based mode. Resolved here rather than in theme.js because theme.js runs after
             // first paint, and an evening reader would otherwise watch a white page turn dark.
@@ -26,7 +28,7 @@
         })();
     </script>
 
-    <!-- Google tag (gtag.js) -->
+    <!-- Google Analytics (gtag.js). -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-FMCYFTFPEL"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
@@ -72,22 +74,15 @@
 </head>
 
 <body>
-    <!-- The Edge Tray (docs/edge-tray-spec.md): first in the body, outside anything transformed. -->
-    <div class="hud-right">
-        <div id="tray" class="tray">
-            <button id="trayTab" class="tray-tab" type="button" aria-controls="trayButtons" aria-expanded="true"
-                aria-label="Hide menu" title="Hide menu">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                    stroke-linejoin="round" aria-hidden="true">
-                    <path d="m9 5 7 7-7 7" />
-                </svg>
-            </button>
-
-            <div id="trayButtons" class="tray-buttons">
+    <!-- The Edge Trays (docs/edge-tray-spec.md), first in the body, outside anything transformed.
+         The top one holds the layer switches; the side one the map's buttons and the settings. -->
+    <div class="hud-top">
+        <div id="topTray" class="ttray">
+            <div id="topTrayButtons" class="ttray-buttons" role="group" data-i18n-attr="aria-label:tray.quick" aria-label="Map layers">
                 <button class="glass-btn" id="trayLayers" type="button" aria-haspopup="dialog"
                     data-i18n-attr="aria-label:tray.layers, title:tray.layers" aria-label="All layers" title="All layers"><span data-icon="layers"></span></button>
-
-                <div id="trayQuick" class="tray-quick" role="group" data-i18n-attr="aria-label:tray.quick" aria-label="Quick layers">
+                <span class="ttray-rule" aria-hidden="true"></span>
+                <div id="trayQuick" class="tray-quick">
                     <button class="glass-btn" type="button" data-quick-layer="mrt" aria-pressed="false"
                         data-i18n-attr="aria-label:layer.mrt.name, title:layer.mrt.name" aria-label="MRT and LRT" title="MRT and LRT"><span data-icon="train"></span></button>
                     <button class="glass-btn" type="button" data-quick-layer="bus-stops" aria-pressed="false"
@@ -100,6 +95,39 @@
                         data-i18n-attr="aria-label:layer.taxis.name, title:layer.taxis.name" aria-label="Available taxis" title="Available taxis"><span data-icon="taxi"></span></button>
                     <button class="glass-btn" type="button" data-quick-layer="traffic-cams" aria-pressed="false"
                         data-i18n-attr="aria-label:layer.traffic-cams.name, title:layer.traffic-cams.name" aria-label="Traffic cameras" title="Traffic cameras"><span data-icon="camera"></span></button>
+                </div>
+            </div>
+            <!-- After the buttons: below them on screen. The chevron points up, "push away". -->
+            <button id="topTrayTab" class="ttray-tab" type="button" aria-controls="topTrayButtons" aria-expanded="true"
+                aria-label="Hide layer switches" title="Hide layer switches">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" aria-hidden="true">
+                    <path d="m5 15 7-7 7 7" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="hud-right">
+        <div id="tray" class="tray">
+            <button id="trayTab" class="tray-tab" type="button" aria-controls="trayButtons" aria-expanded="true"
+                aria-label="Hide menu" title="Hide menu">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" aria-hidden="true">
+                    <path d="m9 5 7 7-7 7" />
+                </svg>
+            </button>
+
+            <div id="trayButtons" class="tray-buttons">
+                <div id="mapControls" class="tray-group" role="group" data-i18n-attr="aria-label:controls.label" aria-label="Map controls">
+                    <button class="glass-btn" id="locateBtn" type="button" aria-pressed="false"
+                        data-i18n-attr="aria-label:controls.locate, title:controls.locate" aria-label="Show where I am" title="Show where I am"><span data-icon="locate"></span></button>
+                    <button class="glass-btn" id="compassBtn" type="button" aria-pressed="false"
+                        data-i18n-attr="aria-label:controls.compass, title:controls.compass" aria-label="Face my direction" title="Face my direction"><span data-icon="compass"></span></button>
+                    <button class="glass-btn" id="pitchBtn" type="button" aria-pressed="false"
+                        data-i18n-attr="aria-label:controls.pitch, title:controls.pitch" aria-label="3D view" title="3D view"><span data-icon="cube"></span></button>
+                    <button class="glass-btn" id="northBtn" type="button"
+                        data-i18n-attr="aria-label:controls.north, title:controls.north" aria-label="North up, flat" title="North up, flat"><span data-icon="north"></span></button>
                 </div>
 
                 <span class="tray-rule" aria-hidden="true"></span>
@@ -125,16 +153,6 @@
 
         <p id="status" class="status glass hidden" role="status" aria-live="polite"></p>
 
-        <div class="mapControls" role="group" data-i18n-attr="aria-label:controls.label" aria-label="Map controls">
-            <button class="glass-btn" id="northBtn" type="button"
-                data-i18n-attr="aria-label:controls.north, title:controls.north" aria-label="North up, flat" title="North up, flat"><span data-icon="north"></span></button>
-            <button class="glass-btn" id="compassBtn" type="button" aria-pressed="false"
-                data-i18n-attr="aria-label:controls.compass, title:controls.compass" aria-label="Face my direction" title="Face my direction"><span data-icon="compass"></span></button>
-            <button class="glass-btn" id="pitchBtn" type="button" aria-pressed="false"
-                data-i18n-attr="aria-label:controls.pitch, title:controls.pitch" aria-label="3D view" title="3D view"><span data-icon="cube"></span></button>
-            <button class="glass-btn" id="locateBtn" type="button" aria-pressed="false"
-                data-i18n-attr="aria-label:controls.locate, title:controls.locate" aria-label="Show where I am" title="Show where I am"><span data-icon="locate"></span></button>
-        </div>
 
     </main>
 

@@ -8,7 +8,11 @@
 //   /rain <place>       whether the rain gauges near there have rain (no place: where it's raining)
 //   /psi                air quality by region
 //   /carpark <place>    the nearest carparks with free car lots
+//   /link [place]       a link to the map (at the place; or send a location in reply to it)
 //   a location          the forecast and the rain where it was sent from
+//
+// /link is a placeholder until Augy says what he meant by it: kept to one small function, link(),
+// so it's easy to change.
 
 import { LAYERS } from "../_layers/index.js";
 import { searchPlace } from "./onemap.js";
@@ -54,6 +58,8 @@ export function help() {
       ["/rain", "Is it raining near a place", "/rain Bishan"],
       ["/psi", "Air quality by region now", "/psi"],
       ["/carpark", "The nearest carparks with free lots", "/carpark Bugis"],
+      ["/link", "A link to the map, at a place", "/link Bishan"],
+      ["/start", "Start, with this list", "/start"],
       ["/help", "This list", "/help"],
     ]),
     "",
@@ -64,7 +70,7 @@ export function help() {
   const fallback =
     "SG Map Explorer: Singapore's weather, rain, air and carparks, from the same live data as the map.\n\n" +
     "/weather <place>: the 2-hour forecast there\n/rain <place>: is it raining near there\n/psi: air quality by region\n" +
-    "/carpark <place>: the nearest carparks with free lots\n/help: this list\n\n" +
+    "/carpark <place>: the nearest carparks with free lots\n/link <place>: a link to the map there\n/start, /help: this list\n\n" +
     "Or send your location for the forecast and the rain where you are.";
   return { markdown, fallback, button: { text: "Open the map", url: `${SITE_URL}/` } };
 }
@@ -224,6 +230,32 @@ export async function carpark(arg) {
   };
 }
 
+// ---------- /link ----------
+
+// A link to the map: the whole island, or at a place, or at a location sent in reply to the
+// bot. One plain line and a button.
+export async function link(arg, at = null) {
+  if (!arg && !at) {
+    return {
+      text: `The map: ${SITE_URL}/\nSend /link and a place for a link to there, or send your location in reply to this message.`,
+      button: { text: "Open the map", url: `${SITE_URL}/` },
+    };
+  }
+  let place = at;
+  if (!place) {
+    try {
+      const towns = (await layer("weather-2h").catch(() => null))?.items || [];
+      place = await where(arg, towns);
+    } catch {
+      return sourceDown("OneMap's search");
+    }
+    if (!place) return notFound(arg);
+  }
+  if (!(place.lat > 1.13 && place.lat < 1.5 && place.lng > 103.55 && place.lng < 104.13)) return { text: "That's outside Singapore, so the map can't open there." };
+  const url = mapLink({ lat: place.lat, lng: place.lng, z: 16 });
+  return { text: `The map at ${place.name || "your location"}: ${url}`, button: { text: "Open the map here", url } };
+}
+
 // ---------- a location ----------
 
 export async function located(lat, lng) {
@@ -252,7 +284,13 @@ export function parseCommand(text, username = "") {
 }
 
 export async function replyTo(message, username = "") {
-  if (message?.location) return located(Number(message.location.latitude), Number(message.location.longitude));
+  if (message?.location) {
+    const lat = Number(message.location.latitude);
+    const lng = Number(message.location.longitude);
+    // In reply to the bot (its /link): a link to the map there. Otherwise the weather there.
+    if (message.reply_to_message?.from?.is_bot) return link("", { name: "", lat, lng });
+    return located(lat, lng);
+  }
   const cmd = parseCommand(message?.text, username);
   if (!cmd) return message?.chat?.type === "private" ? help() : null;
   switch (cmd.command) {
@@ -265,6 +303,8 @@ export async function replyTo(message, username = "") {
     case "carpark":
     case "carparks":
       return carpark(cmd.arg);
+    case "link":
+      return link(cmd.arg);
     default:
       // /start, /help, and in a private chat anything else; a group's other bots' commands get nothing.
       return ["start", "help"].includes(cmd.command) || message?.chat?.type === "private" ? help() : null;

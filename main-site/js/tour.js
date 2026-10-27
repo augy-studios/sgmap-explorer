@@ -2,8 +2,8 @@
 // a spotlight on the real thing with a chalk arrow to it and one line saying what it does. Next
 // moves on, Skip ends it, and Settings' Show me around shows it again.
 //
-// The app has one page, the map, so its tour is also the welcome. Its steps light the Edge Tray's
-// buttons, so the tray opens first if it was left closed. A step whose thing isn't on screen is
+// The app has one page, the map, so its tour is also the welcome. Its steps light the two Edge
+// Trays' buttons, so each opens first if it was left closed. A step whose thing isn't on screen is
 // left out.
 
 import { t } from "../i18n/i18n.js";
@@ -20,10 +20,9 @@ const TOURS = {
     labelKey: "tour.map.label",
     steps: [
       { el: "#map", textKey: "tour.map.map" },
-      { el: "#trayLayers", textKey: "tour.map.layers" },
       { el: "#trayQuick", textKey: "tour.map.quick" },
-      { el: "#compassBtn", textKey: "tour.map.compass" },
-      { el: "#pitchBtn", textKey: "tour.map.pitch" },
+      { el: "#trayLayers", textKey: "tour.map.layers" },
+      { el: "#mapControls", textKey: "tour.map.controls" },
       { el: "#traySave", textKey: "tour.map.save" },
       { el: "#settingsBtn", textKey: "tour.map.settings" },
     ],
@@ -228,7 +227,7 @@ export function start(id = START) {
   const from = pages.active();
   if (from !== id) pages.open(id);
   // The tray's buttons are most of the steps.
-  if (!trayOpen()) setTray(true, { save: false });
+  for (const name of ["top", "side"]) if (!trayOpen(name)) setTray(name, true, { save: false });
   root = true;
   // After the tray has slid in.
   setTimeout(() => {

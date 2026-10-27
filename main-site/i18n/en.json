@@ -10,7 +10,7 @@
   "tray.hide": "Hide menu",
   "tray.show": "Show menu",
   "tray.layers": "All layers",
-  "tray.quick": "Quick layers",
+  "tray.quick": "Map layers",
   "tray.save": "Save the map for offline",
   "tray.theme": "Theme",
   "tray.settings": "Settings",
@@ -237,13 +237,14 @@
   "tour.map.label": "The map",
   "tour.map.map": "Singapore, live. Drag two fingers up or down to tilt it and see the buildings in 3D. Tap a marker for what it is.",
   "tour.map.layers": "Every layer is in here: getting around, roads, weather, air quality and OneMap's themes.",
-  "tour.map.quick": "Quick switches for MRT, bus stops, the forecast, carparks, taxis and traffic cameras.",
-  "tour.map.compass": "Turn the map with your phone, so it faces the way you do.",
-  "tour.map.pitch": "Tilt the map to 3D and back.",
+  "tour.map.quick": "The layers people want most, along the top: MRT, bus stops, the forecast, carparks, taxis and traffic cameras. The tab under them tucks them away.",
   "tour.map.save": "Save Singapore's map on this device, for when there's no signal.",
-  "tour.map.settings": "Settings has the base map and this tour again. Theme and language are just above.",
+  "tour.map.settings": "Theme and language are just above, Settings has the base map and this tour again, and the tab beside these buttons slides them off to the side.",
   "update.label": "Update",
   "update.ready": "A new version of SG Map Explorer is ready.",
   "update.reload": "Reload",
-  "update.later": "Not now"
+  "update.later": "Not now",
+  "tray.top-hide": "Hide layer switches",
+  "tray.top-show": "Show layer switches",
+  "tour.map.controls": "Show where you are, turn the map with your phone so it faces the way you do, tilt it to 3D, and put north back up."
 }

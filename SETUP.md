@@ -8,6 +8,7 @@ SG Map Explorer's bot answers in Telegram from the same live data as the map:
 | `/rain <place>` | whether the rain gauges near there have rain; on its own, where it's raining |
 | `/psi` | air quality (24-hour PSI and PM2.5) by region |
 | `/carpark <place>` | the nearest carparks with free car lots |
+| `/link <place>` | a link to the map at that place; on its own, a link to the map (send a location in reply to it for a link to there). For now: Augy is deciding what `/link` should do |
 | a location | the forecast and the rain where it was sent from |
 | `/start`, `/help` | what the bot does |
 
@@ -94,7 +95,7 @@ So Telegram suggests the commands when someone types `/`:
 ```sh
 curl -s "https://api.telegram.org/bot<TOKEN>/setMyCommands" \
   -H "Content-Type: application/json" \
-  -d '{"commands":[{"command":"weather","description":"2-hour forecast for a place"},{"command":"rain","description":"Is it raining near a place"},{"command":"psi","description":"Air quality by region"},{"command":"carpark","description":"Nearest carparks with free lots"},{"command":"help","description":"What the bot does"}]}'
+  -d '{"commands":[{"command":"weather","description":"2-hour forecast for a place"},{"command":"rain","description":"Is it raining near a place"},{"command":"psi","description":"Air quality by region"},{"command":"carpark","description":"Nearest carparks with free lots"},{"command":"link","description":"A link to the map at a place"},{"command":"start","description":"Start the bot"},{"command":"help","description":"What the bot does"}]}'
 ```
 
 ## 7. Test it
@@ -106,8 +107,10 @@ In Telegram, open the bot and send each of these:
 3. `/rain Bishan`, then `/rain` on its own.
 4. `/psi`.
 5. `/carpark Bugis`.
-6. The paperclip → **Location** → send your current location.
-7. Tap **Open the map** on any reply: the map should open at that spot, with a red pin and the
+6. `/link Bishan`, then `/link` on its own and reply to it with your location.
+7. The paperclip → **Location** → send your current location (not as a reply): the forecast
+   and the rain there.
+8. Tap **Open the map** on any reply: the map should open at that spot, with a red pin and the
    reply's layer turned on.
 
 ## Checking on it

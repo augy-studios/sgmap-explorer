@@ -31,7 +31,7 @@ export function openModal(id, { focus } = {}) {
   openers.set(id, document.activeElement);
   backdrop.classList.remove("hidden");
   document.body.classList.add("modal-open");
-  for (const el of $$(".hud-right, #view-map")) el.inert = true;
+  for (const el of $$(".hud-right, .hud-top, #view-map")) el.inert = true;
   requestAnimationFrame(() => {
     const target = (focus && backdrop.querySelector(focus)) || backdrop.querySelector(FOCUSABLE);
     target?.focus({ preventScroll: true });
@@ -45,7 +45,7 @@ export function closeModal(id) {
   backdrop.classList.add("hidden");
   if (!document.querySelector(".modal-backdrop:not(.hidden)")) {
     document.body.classList.remove("modal-open");
-    for (const el of $$(".hud-right, #view-map")) el.inert = false;
+    for (const el of $$(".hud-right, .hud-top, #view-map")) el.inert = false;
   }
   const back = openers.get(id);
   openers.delete(id);

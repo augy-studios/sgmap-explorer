@@ -406,7 +406,7 @@ body.modal-open { overflow: hidden; }
 @media (max-width: 480px) {
   :root {
     --glass-btn: 40px;
-    --edge: max(10px, calc(env(safe-area-inset-right) + 10px));
+    --edge: 10px;
   }
 }
 
@@ -417,7 +417,7 @@ body.modal-open { overflow: hidden; }
   }
 }
 /* 5.1's content padding is left out: the map is full-bleed, so it keeps its own controls
-   away from the top right instead (.mapControls at the bottom right, .brand top left). */
+   away from the trays instead (.brand top left, MapLibre's attribution and scale bottom left). */
 .tray-start-collapsed .tray { transform: translateX(var(--tray-shift)); transition: none; }
 .tray-start-collapsed .tray-buttons > * { opacity: 0; translate: 12px 0; scale: 0.85; transition: none; }
 .tray-start-collapsed main, .tray-start-collapsed .brand { transition: none; }
@@ -503,10 +503,18 @@ body.touring { overflow: hidden; }
 /* Tokens the specs ask for, mapped to the theme's. */
 :root {
   --glass-btn: 44px;
-  --edge: max(16px, calc(env(safe-area-inset-right) + 16px));
+  /* The side tray's inset from its edge. The hud itself sits inside the safe area (.hud-right
+     below), so a collapsed tab lands at the notch's edge in landscape, never under it. */
+  --edge: 16px;
   --edge-left: max(16px, calc(env(safe-area-inset-left) + 16px));
   --banner-h: 0px;
-  --tray-top: max(calc(var(--banner-h, 0px) + 14px), calc(env(safe-area-inset-top) + 14px));
+  /* The top of the usable screen: under the update bar, the notch and the status bar. */
+  --top-base: max(calc(var(--banner-h, 0px) + 8px), calc(env(safe-area-inset-top) + 8px));
+  /* The top tray: its buttons, a 6px gap and its 22px tab. */
+  --ttab-h: 22px;
+  --ttray-h: calc(var(--glass-btn) + 6px + var(--ttab-h));
+  /* Where the side tray and the brand line start: under the top tray (open, or only its tab). */
+  --tray-top: calc(var(--top-base) + var(--ttray-h) + 10px);
   --tray-time: 0.34s;
   --tray-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --accent-fill: var(--brand-fill);
@@ -527,14 +535,14 @@ body { position: fixed; inset: 0; }
 
 /* The tray: room for a long column on a short screen (9, more items than fit). */
 .tray-buttons {
-  /* Clear of the map's own buttons along the bottom. */
-  max-height: calc(100dvh - var(--tray-top) - var(--glass-btn) - 56px);
+  /* Clear of MapLibre's attribution line along the bottom, open or not. */
+  max-height: calc(100dvh - var(--tray-top) - 56px - env(safe-area-inset-bottom));
   overflow-y: auto;
   scrollbar-width: none;
   padding: 2px 2px 12px;
 }
 .tray-buttons::-webkit-scrollbar { display: none; }
-.tray-quick { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.tray-quick { display: flex; flex-direction: row; align-items: center; gap: 8px; }
 .glass-btn[aria-pressed="true"],
 .glass-btn[aria-pressed="true"]:hover {
   background: var(--accent-fill);
@@ -593,6 +601,7 @@ body { position: fixed; inset: 0; }
   position: absolute;
   z-index: 5;
   top: var(--tray-top);
+  transition: top var(--tray-time) var(--tray-ease);
   left: var(--edge-left);
   display: flex;
   align-items: center;
@@ -601,7 +610,6 @@ body { position: fixed; inset: 0; }
   border-radius: 14px;
   background: var(--panel);
   max-width: calc(100vw - var(--glass-btn) - 24px - 3 * var(--edge-left));
-  transition: top 0.2s ease;
 }
 .brand img { width: 28px; height: 28px; border-radius: 8px; flex: none; }
 .brand h1 { font-size: 1.02rem; font-weight: 400; color: var(--brand-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -623,21 +631,9 @@ body { position: fixed; inset: 0; }
 }
 .status.hidden { opacity: 0; transform: translateY(-6px); visibility: hidden; transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0.18s; }
 
-/* The map's own controls, a row at the bottom right under the tray's column (5.1), above the
-   card. A row rather than a column, so a phone's screen has room for both. */
-.mapControls {
-  position: absolute;
-  z-index: 5;
-  right: var(--edge);
-  /* Above MapLibre's attribution line along the very bottom. */
-  bottom: calc(max(38px, env(safe-area-inset-bottom) + 30px) + var(--card-h));
-  display: flex;
-  flex-direction: row;
-  gap: 8px;
-  transition: bottom 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
 #northBtn svg { transition: rotate 0.1s linear; }
 #northBtn:not(.turned) { opacity: 0.85; }
+.tray-group { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 
 /* MapLibre's attribution and scale, bottom left, readable on glass. */
 .maplibregl-ctrl-bottom-left { left: env(safe-area-inset-left); bottom: calc(env(safe-area-inset-bottom) + var(--card-h)); transition: bottom 0.22s ease; }
@@ -821,8 +817,146 @@ body { position: fixed; inset: 0; }
   .card { right: auto; width: 420px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .card, .status, .mapControls, .switchTrack span { transition-duration: 0.001ms !important; }
+  .card, .status, .switchTrack span, .hud-top, .ttray, .ttray-tab, .ttray-tab svg, .ttray-buttons > *, .tray-quick > * { transition-duration: 0.001ms !important; transition-delay: 0s !important; }
 }
 
 /* Above the tray (800) and the update bar (900), as edge-tray-spec.md 8.7 orders them. */
 .modal-backdrop { z-index: 1000; }
+
+/* ======== the two Edge Trays, placed ======== */
+
+/* The side tray inside the safe area, so collapsed its tab sits at the notch's edge, not under it,
+   and under the top tray (--tray-top), moving with it. */
+.hud-right {
+  right: env(safe-area-inset-right);
+  transition: top var(--tray-time) var(--tray-ease);
+}
+:root.top-collapsed { --tray-top: calc(var(--top-base) - 8px + var(--ttab-h) + 10px); }
+
+/* The top tray: the spec's tray turned to the top edge. A row of buttons with its tab under
+   them; collapsed, it slides up until only the tab is left, flat against the top of the usable
+   screen (the status bar's edge on a phone, the window's on a computer). */
+.hud-top {
+  position: fixed;
+  z-index: 800;
+  top: var(--top-base);
+  left: env(safe-area-inset-left);
+  right: env(safe-area-inset-right);
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  transition: top 0.2s ease;
+}
+.hud-top > * { pointer-events: auto; }
+.ttray {
+  --ttray-shift: calc(var(--glass-btn) + 6px + 8px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100% - 16px);
+  transition: transform var(--tray-time) var(--tray-ease);
+}
+.ttray.collapsed { transform: translateY(calc(-1 * var(--ttray-shift))); }
+.ttray-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  touch-action: pan-x;
+}
+.ttray-buttons::-webkit-scrollbar { display: none; }
+.ttray-rule {
+  flex: none;
+  width: 1px;
+  height: 24px;
+  margin: 0 2px;
+  background: color-mix(in srgb, var(--ink) 25%, transparent);
+}
+.ttray-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: var(--ttab-h);
+  padding: 0;
+  border-radius: 12px;
+  background: var(--surface);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid var(--surface-border);
+  box-shadow: var(--shadow);
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-radius var(--tray-time) var(--tray-ease);
+}
+.ttray-tab svg { width: 16px; height: 16px; transition: transform var(--tray-time) var(--tray-ease); }
+.ttray.collapsed .ttray-tab { border-radius: 0 0 12px 12px; border-top: none; }
+.ttray.collapsed .ttray-tab svg { transform: rotate(180deg); }
+.ttray-tab:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.tray { touch-action: pan-y; }
+
+/* Its buttons unroll as the side tray's do, left to right, and go together up off the edge. */
+.ttray-buttons > *,
+.tray-quick > * {
+  transition:
+    opacity calc(var(--tray-time) * 0.8) ease,
+    translate var(--tray-time) var(--tray-ease),
+    scale var(--tray-time) var(--tray-ease),
+    transform 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+  transition-delay: calc(var(--i, 0) * 18ms), calc(var(--i, 0) * 18ms), calc(var(--i, 0) * 18ms), 0s, 0s, 0s;
+}
+.ttray-buttons > :nth-child(2) { --i: 1; }
+.tray-quick > :nth-child(1) { --i: 2; }
+.tray-quick > :nth-child(2) { --i: 3; }
+.tray-quick > :nth-child(3) { --i: 4; }
+.tray-quick > :nth-child(4) { --i: 5; }
+.tray-quick > :nth-child(5) { --i: 6; }
+.tray-quick > :nth-child(6) { --i: 7; }
+.ttray.collapsed .ttray-buttons > *,
+.ttray.collapsed .tray-quick > * {
+  opacity: 0;
+  translate: 0 -12px;
+  scale: 0.85;
+  transition-delay: 0s;
+}
+
+/* Closed before first paint (6.4), without the slide. */
+.top-start-collapsed .ttray { transform: translateY(calc(-1 * var(--ttray-shift))); transition: none; }
+.top-start-collapsed .ttray-buttons > *, .top-start-collapsed .tray-quick > * { opacity: 0; translate: 0 -12px; scale: 0.85; transition: none; }
+.top-start-collapsed .ttray-tab { border-radius: 0 0 12px 12px; border-top: none; }
+.top-start-collapsed .ttray-tab svg { transform: rotate(180deg); }
+.top-start-collapsed .hud-right, .top-start-collapsed .brand { transition: none; }
+
+/* Wide enough (a computer, a phone on its side): one row along the top. The brand line on the
+   left, the top tray's row to the right of it, next to the side tray, which starts at the top
+   too. Narrower, they stack: the top tray across the top, the brand line and the side tray
+   under it. */
+@media (min-width: 760px) {
+  :root, :root.top-collapsed { --tray-top: var(--top-base); }
+  .hud-top {
+    justify-content: flex-end;
+    padding-right: calc(var(--glass-btn) + 24px + 8px + var(--edge) + 12px);
+  }
+}
+
+/* A short screen (a phone on its side): smaller buttons, so the side tray's column fits. */
+@media (max-height: 500px) {
+  :root { --glass-btn: 36px; }
+  .glass-btn svg { width: 20px; height: 20px; }
+}
+
+/* A phone held upright: the top tray's seven buttons fit across 360px. */
+@media (max-width: 480px) {
+  .ttray-buttons, .tray-quick { gap: 6px; }
+  .ttray-rule { margin: 0; }
+}
+
+/* The tour's Skip, top left as the spec has it, but under the top tray, whose buttons the tour
+   lights (on a wide screen the tray is at the right and this is the top). */
+.tourSkip { top: max(16px, calc(var(--tray-top) + 4px)); }
