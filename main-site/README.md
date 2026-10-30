@@ -67,7 +67,7 @@ weekly, Mondays 03:00 Singapore time, with `CRON_SECRET`. `?sweep=1` forces a sw
 
 `POST /api/telegram/webhook` (`api/telegram/webhook.js`), set up by [../SETUP.md](../SETUP.md).
 It checks Telegram's `X-Telegram-Bot-Api-Secret-Token` against `TELEGRAM_WEBHOOK_SECRET` in
-constant time, then answers from `api/_lib/bot.js`: `/weather`, `/rain`, `/psi`, `/carpark`, `/link` (a placeholder: a link to the map at a place)
+constant time, then answers from `api/_lib/bot.js`: `/weather`, `/rain`, `/psi`, `/carpark`
 and a sent location, from the same trimmed layers the map gets. Replies go out as Rich Messages
 (`sendRichMessage`, Bot API 10.1) per docs/telethon-richmessage-retrofit.md, with a plain
 `sendMessage` fallback (`api/_lib/telegram.js`), and an **Open the map** button linking to

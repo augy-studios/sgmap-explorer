@@ -14,7 +14,7 @@ quality, layer by layer. At <https://sgmap.uwuapps.org>.
   themes.
 - **Offline**: the app shell, the map's tiles as they're seen, and a Download button for the whole
   of Singapore's map.
-- **A Telegram bot**: `/weather`, `/rain`, `/psi`, `/carpark` and `/link` from the same data, as Telegram
+- **A Telegram bot**: `/weather`, `/rain`, `/psi` and `/carpark` from the same data, as Telegram
   Rich Messages, each with a button that opens the map at that spot. [SETUP.md](SETUP.md) sets
   it up.
 - **Links to a spot**: `https://sgmap.uwuapps.org/?at=1.3,103.85&z=16&layers=carparks` opens
